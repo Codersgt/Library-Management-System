@@ -5,14 +5,21 @@
 #include<time.h>
 #include <unistd.h>
 
+
+char BOOK_AVL[] = "A";
+char BOOK_ISS[] = "I";
+
 void add_book();
 void view_book();
-void edit_book(char book_id[10]);
+void edit_book(char book_id[]);
 void delete_book();
 void delete_student();
 void add_student();
 void view_student();
-
+void issue_book();
+int update_book_status(char id[], char status[]);
+struct book book_avl(char book_id[]);
+struct student std_avl(char std_id[]);
 
 typedef struct book{
 	char id[10];
@@ -20,17 +27,15 @@ typedef struct book{
 	char author[50];
     char publication[50];
 	char price[5];
-	char status[10]
+	char status[10];
 }b;
-struct student{
+typedef struct student{
 	char id[10];
 	char sname[50];
 	char bookname[50];
 	char sroll[10];
 	char date[12];
 }stu;
-
-
 
 int main()
 {
@@ -76,7 +81,9 @@ int main()
                 issue_book();
                 break;
             case 8:;
-            case 9:;
+            case 9:
+                list_issued_book();
+                break;
             case 0:
 			    exit(0);
 			    break;
@@ -88,12 +95,8 @@ int main()
 	goto top;
 	return 0;
 }
-
-
 //////////////////////////////////////////////////// Book part ////////////////////////////////
-
 //////////////////////////////////////////////////   Add Book ////////////////////////////////////////
-
 void add_book()
 {
     FILE *fp;
@@ -117,7 +120,7 @@ void add_book()
     scanf("%s", b.publication);
     printf("\nEnter Price:");
     scanf("%s", b.price);
-    if(fprintf(fp,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "Available", b.id, b.name, b.author, b.publication, b.price)>0)
+    if(fprintf(fp,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", b.id, b.name, b.author, b.publication, b.price, BOOK_AVL)>0)
     {
         printf("\nBook added successfully!!!");
     }
@@ -137,9 +140,7 @@ void add_book()
     main();
 
 }
-
 ///////////////////////////// View Book /////////////////////////////////
-
 void view_book()
 {
     FILE *fp;
@@ -184,22 +185,20 @@ void delete_book()
     printf("\nEnter Book ID to delete book from system");
     scanf("%s", deleteBookID);
     fp = fopen("book.dat", "r+");
-
     if (fp == NULL)
     {
         printf("file can't be opened \n");
         getch();
     }
     top:
-    while(fscanf(fp,"%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price)!=EOF)
+    while(fscanf(fp,"%s%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price, &b2[i].status)!=EOF)
     {
-        //printf("%s  %s", deleteBookID, b2[i].id);
         if(strcmp(deleteBookID,b2[i].id)==0)
         {
             printf("\n\t\tRecord found!!!");
-            printf("\nBookID \tName \tAuthor \tPublication \tPrice");
-            printf("\n================================================");
-            printf("\n%s\t" "%s\t" "%s\t" "%s\t" "\t%s\t", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price);
+            printf("\nBookID \tName \tAuthor \tPublication \tPrice \t Status");
+            printf("\n===========================================================");
+            printf("\n%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price, b2[i].status);
             printf("\nDo you want to delete it?(Y/N):");
             if(getch()=='y')
             {
@@ -207,16 +206,15 @@ void delete_book()
                 ft=fopen("temp.dat","wb"); // create temporary file to store data.
                 fflush(stdin); //flush data from buffer
                 printf("%s\n", ft);
-                while(fscanf(fp,"%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price)!=EOF)
+                while(fscanf(fp,"%s%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price, &b2[i].status)!=EOF)
                 {
                     if(strcmp(deleteBookID,b2[j].id)!=0)
                     {
-                        fprintf(ft,"%s\t" "%s\t" "%s\t" "%s\t" "%s\n", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price);
+                        fprintf(ft,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price, b2[i].status);
                     }
                     j++;
                 }
-                fclose(fp);
-                fclose(ft);
+                _fcloseall(); ///close all file
                 remove("book.dat");
                 rename("temp.dat","book.dat");
                 printf("\n\t\tThe record is successfully deleted!!!");
@@ -314,7 +312,7 @@ void edit_book(char book_id[10])
         }
         i++;
     }
-    printf("\n Book not found!!!\Do you want to search with another ID?(Y/N)");
+    printf("\n Book not found!!!\nDo you want to search with another ID?(Y/N)");
     if(getch()=='y')
     {
         goto top;
@@ -371,10 +369,7 @@ void add_student()
     sleep(3);
     main();
 }
-
-
 ///////////////////////////// View Students /////////////////////////////////
-
 void view_student()
 {
     FILE *fp;
@@ -447,9 +442,7 @@ void delete_student()
                     }
                     j++;
                 }
-                fclose(fp);
-                fclose(ft);
-                //system("del student.dat");
+                _fcloseall(); // close all file
 
                 if(!remove("student.dat"))
                    {
@@ -549,18 +542,20 @@ void issue_book()
     system("cls");
     char s_id[10],  b_id[10];
     printf("\nEnter student's id to issue book:");
-    scanf("%s", &s_id);
+    scanf("%s", s_id);
     printf("\n Enter book id:");
     scanf("%s", b_id);
     struct student s = std_avl(s_id);
     struct book b = book_avl(b_id);
-    if(strcmp(s_id, b.id)==1)
+    if(strcmp(BOOK_AVL, b.status)==0)
     {
-        printf("\n\t\t\t\Book Details: \nBook Id: %s\t" "Book Name %s\t" "Publication: %s\t" "Status: %s",  b.id, b.name, b.publication, b.status);
+        printf("\n\t\t\tBook Details: \nBook Id: %s\t" "Book Name %s\t" "Publication: %s\t" "Status: %s",  b.id, b.name, b.publication, b.status);
     }
     else
     {
-        printf("Book issued to another student");
+        printf("\nBook issued to another student \n Try after getting it back!!!");
+        sleep(3);
+        main();
     }
     printf("\n\t\t\t Student Details: \nStudent ID: %s\t" "Student's Name: %s\t" "Roll No: %s\n",  s.id, s.sname, s.sroll);
     printf("\n\nDo you want issue %s to %s?(Y/N)", b.name, s.sname);
@@ -575,37 +570,101 @@ void issue_book()
         }
         if(fprintf(fp,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s",s.id,s.sname,s.sroll,b.id,b.name)>0)
         {
-            // update the book as "issued" in book file
-            printf("\nBook issued successfully!!!");
-            fclose(fp);
-            sleep(3);
-            main();
+            int a = update_book_status(b.id, BOOK_ISS);
+            if(a>0)
+            {
+                printf("\nBook issued successfully!!!");
+                fclose(fp);
+                sleep(3);
+                main();
+            }
+            else
+            {
+                printf("\n Failed to issue book!!!\tPress any key to continue....");
+                getch();
+            }
         }
         else
         {
-            printf("Error");
+            printf("Error!!");
             getch();
+            main();
         }
 
     }
     else if(getch()=='n'|| getch()=='N')
     {
-        ///fclose(fp);
         main();
     }
     printf("\nWrong option selected!!!");
-    ///fclose(fp);
     sleep(3);
     main();
-
-
+}
+///////////////////////////////////////////////////////update book status ///////////////////////////////////////
+int update_book_status(char id[], char status[])
+{
+    FILE *fp;
+    b books;
+    fp = fopen("book.dat", "r+");
+    if (fp == NULL)
+    {
+         printf("file can't be opened \n");
+         getch();
+    }
+    while(fscanf(fp,"%s%s%s%s%s%s", &books.id, &books.name, &books.author, &books.publication, &books.price, &books.status)!=EOF)
+    {
+       if(strcmp(books.id, id) == 0)
+       {
+            strcpy(books.status, status);
+            fseek(fp, strlen(books.id) - strlen(books.name) - strlen(books.author) - strlen(books.publication) - strlen(books.price)  - strlen(books.status) - 6, SEEK_CUR);
+            if(fprintf(fp, "%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", books.id, books.name, books.author, books.publication, books.price, status)>0)
+            _fcloseall();
+            return 1;
+        }
+      }
+    return 0;
 }
 /////////////////////////////////////////////////return book/////////////////////////////////////////
 void ret_book()
 {
 
 }
-
+//////////////////////////////////////////////////////////view status /////////////////////////////////////////
+void list_issued_book()
+{
+    FILE *fp;
+    stu st[100];
+    b bk[100];
+    int ch;
+    system("cls");
+    fp = fopen("issue.dat", "r");
+    if (fp == NULL)
+    {
+        printf("file can't be opened \n");
+        getch();
+    }
+    int i = 0;
+    printf("\nStudent ID \tStudent's Name \tRoll No. \tBook ID \tBook Name\n");
+    printf("\n------------------------------------------------------------------------------\n");
+    while(fscanf(fp,"%s%s%s%s%s", &st[i].id, &st[i].sname, &st[i].sroll, &bk[i].id, &bk[i].name) != EOF)
+    {
+        printf("%s\t\t" "%s\t\t" "%s\t\t" "%s\t\t" "%s\n",  st[i].id, st[i].sname, st[i].sroll, bk[i].id, bk[i].name);
+        i++;
+    }
+    printf("\n1. Return Book \n2. Main menu\n");
+    scanf("%d", &ch);
+    switch(ch)
+    {
+    case 1:
+        printf("Sorry!!!Function not made till now!!!");
+        //edit_book(scanf("%s",&b1[0].id)); //
+        break;
+    default:
+        main();
+    }
+    getch();
+    main();
+}
 
 
 
