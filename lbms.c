@@ -8,10 +8,10 @@
 
 char BOOK_AVL[] = "A";
 char BOOK_ISS[] = "I";
+char password[10];
 
 void add_book();
 void view_book();
-void edit_book(char book_id[]);
 void delete_book();
 void delete_student();
 void add_student();
@@ -20,6 +20,11 @@ void issue_book();
 int update_book_status(char id[], char status[]);
 struct book book_avl(char book_id[]);
 struct student std_avl(char std_id[]);
+int delete_issue_book(char b_id[]);
+void list_issued_book();
+void ret_book();
+void sign_up();
+void get_password(char* pass);
 
 typedef struct book{
 	char id[10];
@@ -40,9 +45,12 @@ typedef struct student{
 int main()
 {
 
-
+        if(login()!=0)
+        {
+            exit;
+        }
         int ch=0;
-        	top:
+        top:
 		system("cls");
 		printf("<================Library management system ==============>\n");
 		printf("\t 1. Add Book\n");
@@ -80,7 +88,9 @@ int main()
             case 7:
                 issue_book();
                 break;
-            case 8:;
+            case 8:
+                ret_book();
+                break;
             case 9:
                 list_issued_book();
                 break;
@@ -162,14 +172,7 @@ void view_book()
         printf("%s\t\t" "%s\t\t" "%s\t\t" "%s\t\t" "\t%s\t" "%s\n", b1[i].id, b1[i].name, b1[i].author, b1[i].publication, b1[i].price, b1[i].status);
         i++;
     }
-    printf("\n1. Edit Book\n 2. Main menu\n");
-    scanf("%d", &ch);
-    switch(ch)
-    {
-    case 1:
-        printf("Enter Book Id to edit book:");
-        edit_book(scanf("%s",&b1[0].id)); //
-    }
+    printf("\nPress any key to go main menu...");
     getch();
     main();
 }
@@ -248,87 +251,7 @@ void delete_book()
     getch();
     goto top;
 }
-//////////////////////////////////////////////////Edit Book ///////////////////////////////////////////
-void edit_book(char book_id[10])
-{
-    printf("\n%s", book_id);
-    getch();
-    main();
 
-    FILE *fp, *ft;
-    b b1[100];
-    b b2[100];
-    char deleteBookID[10], tbookID[10];
-    int i=0, j=0;
-    printf("\nEnter Book ID to delete book from system");
-    scanf("%s", deleteBookID);
-    fp = fopen("book.dat", "r+");
-
-    if (fp == NULL)
-    {
-        printf("file can't be opened \n");
-        getch();
-    }
-    top:
-    while(fscanf(fp,"%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price)!=EOF)
-    {
-        //printf("%s  %s", deleteBookID, b2[i].id);
-        if(strcmp(deleteBookID,b2[i].id)==0)
-        {
-            printf("\n\t\tRecord found!!!");
-            printf("\nBookID \tName \tAuthor \tPublication \tPrice");
-            printf("\n================================================");
-            printf("\n%s\t" "%s\t" "%s\t" "%s\t" "\t%s\t", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price);
-            printf("\nDo you want to delete it?(Y/N):");
-            if(getch()=='y')
-            {
-                rewind(fp);  // set the file pointer beginning of the file.
-                ft=fopen("temp.dat","wb"); // create temporary file to store data.
-                fflush(stdin); //flush data from buffer
-                printf("%s\n", ft);
-                while(fscanf(fp,"%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price)!=EOF)
-                {
-                    if(strcmp(deleteBookID,b2[j].id)!=0)
-                    {
-                        fprintf(ft,"%s\t" "%s\t" "%s\t" "%s\t" "%s\n", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price);
-                    }
-                    j++;
-                }
-                fclose(fp);
-                fclose(ft);
-                remove("book.dat");
-                rename("temp.dat","book.dat");
-                printf("\n\t\tThe record is successfully deleted!!!");
-                sleep(3);
-                main();
-            }
-            else
-            {
-                 fclose(fp);
-                printf("\n Cancelled!!!");
-                sleep(3);
-                main();
-            }
-        }
-        i++;
-    }
-    printf("\n Book not found!!!\nDo you want to search with another ID?(Y/N)");
-    if(getch()=='y')
-    {
-        goto top;
-    }
-    else if(getch()=='n')
-    {
-        fclose(fp);
-        main();
-    }
-    printf("Wrong option selected!!!");
-    fclose(fp);
-    sleep(3);
-    main();
-    getch();
-    goto top;
-}
 ///////////////////////////student part//////////////////
 //////////////////////////add student///////////////////
 void add_student()
@@ -390,14 +313,7 @@ void view_student()
         printf("%s\t\t" "%s\t\t" "\t%s\n",  &st[i].id, &st[i].sname, &st[i].sroll);
         i++;
     }
-    printf("\n1. Edit Student\n 2. Main menu\n");
-    scanf("%d", &ch);
-    switch(ch)
-    {
-    case 1:
-        printf("Sorry!!!Function not made till now!!!");
-        //edit_book(scanf("%s",&b1[0].id)); //
-    }
+    printf("\nPress any key to go main menu...");
     getch();
     main();
 }
@@ -603,31 +519,86 @@ void issue_book()
 ///////////////////////////////////////////////////////update book status ///////////////////////////////////////
 int update_book_status(char id[], char status[])
 {
-    FILE *fp;
-    b books;
+    FILE *fp, *ft;
+    b b2[100];
+    int i =0;
     fp = fopen("book.dat", "r+");
     if (fp == NULL)
     {
          printf("file can't be opened \n");
          getch();
     }
-    while(fscanf(fp,"%s%s%s%s%s%s", &books.id, &books.name, &books.author, &books.publication, &books.price, &books.status)!=EOF)
+    ft=fopen("temp.dat","wb"); // create temporary file to store data.
+    fflush(stdin); //flush data from buffer
+    while(fscanf(fp,"%s%s%s%s%s%s", &b2[i].id, &b2[i].name, &b2[i].author, &b2[i].publication, &b2[i].price, &b2[i].status)!=EOF)
     {
-       if(strcmp(books.id, id) == 0)
-       {
-            strcpy(books.status, status);
-            fseek(fp, strlen(books.id) - strlen(books.name) - strlen(books.author) - strlen(books.publication) - strlen(books.price)  - strlen(books.status) - 6, SEEK_CUR);
-            if(fprintf(fp, "%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", books.id, books.name, books.author, books.publication, books.price, status)>0)
-            _fcloseall();
-            return 1;
+        if(strcmp(b2[i].id, id)==0)
+        {
+            strcpy(b2[i].status, status);
         }
-      }
-    return 0;
+        fprintf(ft,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s\t" "%s", b2[i].id, b2[i].name, b2[i].author,b2[i].publication, b2[i].price, b2[i].status);
+        i++;
+    }
+    _fcloseall(); ///close all file
+    int fa = remove("book.dat");
+    int fb = rename("temp.dat","book.dat");
+    if(fa==0 && fb==0)
+    {
+        return 1;
+
+    }
+    else
+    {
+        return 0;
+    }
 }
 /////////////////////////////////////////////////return book/////////////////////////////////////////
 void ret_book()
 {
-
+    FILE *fp;
+    b books; // book structure
+    stu st; // student structure
+    system("cls");
+    char s_id[10],  b_id[10];
+    printf("\n Enter book id that you want to return:");
+    scanf("%s", b_id);
+    fp = fopen("issue.dat", "r+");
+    if (fp == NULL)
+    {
+         printf("file can't be opened \n");
+         getch();
+    }
+    while(fscanf(fp,"%s%s%s%s%s", &st.id, st.sname, &st.sroll, &books.id, books.name)!=EOF)
+    {
+       if(strcmp(books.id, b_id) == 0)
+       {
+           printf("\nStudent ID \tStudent's Name \tRoll No. \tBook ID \tBook Name\n");
+           printf("\n------------------------------------------------------------------------------\n");
+           printf("%s\t\t" "%s\t\t" "%s\t\t" "%s\t\t" "%s\n",  st.id, st.sname, st.sroll, books.id, books.name);
+           fclose(fp);
+           printf("\nAre you sure to return this book?(Y/N)");
+           if(getch()=='y'|| getch()=='Y')
+            {
+                int a = update_book_status(books.id, BOOK_AVL); //make book available from book file
+                int b = delete_issue_book(books.id); // delete record from issue
+                if(a>0 && b>0)
+                {
+                    printf("\nBook returned successfully!!!");
+                    sleep(3);
+                    main();
+                }
+            }
+            else
+            {
+                printf("\n\tCanceled!!!\nPress any key to continue....");
+                getch();
+            }
+       }
+    }
+    printf("\nRecord not found!!!");
+    fclose(fp);
+    getch();
+    main();
 }
 //////////////////////////////////////////////////////////view status /////////////////////////////////////////
 void list_issued_book()
@@ -651,20 +622,125 @@ void list_issued_book()
         printf("%s\t\t" "%s\t\t" "%s\t\t" "%s\t\t" "%s\n",  st[i].id, st[i].sname, st[i].sroll, bk[i].id, bk[i].name);
         i++;
     }
-    printf("\n1. Return Book \n2. Main menu\n");
-    scanf("%d", &ch);
-    switch(ch)
-    {
-    case 1:
-        printf("Sorry!!!Function not made till now!!!");
-        //edit_book(scanf("%s",&b1[0].id)); //
-        break;
-    default:
-        main();
-    }
+    printf("\nPress any key to go main menu...");
     getch();
     main();
 }
+/////////////////////////////////////////////////////Remove book from issue file///////////////////////////
+int delete_issue_book(char b_id[])
+{
+    FILE *fp, *ft;
+    stu s;
+    b bk;
+    int i=0;
+    fp = fopen("issue.dat", "r+");
+    if (fp == NULL)
+    {
+        return 0;
+    }
+    rewind(fp);  // set the file pointer beginning of the file.
+    ft=fopen("itemp.dat","wb"); // create temporary file to store data.
+    fflush(stdin); //flush data from buffer
+    while(fscanf(fp,"\n%s\t" "%s\t" "%s\t" "%s\t" "%s",&s.id,&s.sname,&s.sroll,&bk.id,&bk.name)>0)
+    {
+        if(strcmp(b_id,bk.id)!=0)
+        {
+            fprintf(ft,"%s\t" "%s\t" "%s\t" "%s\t" "%s\n", s.id,s.sname,s.sroll,bk.id,bk.name);
+        }
+    }
+    _fcloseall(); // close all file
+    remove("issue.dat");
+    rename("itemp.dat","issue.dat");
+    return 1;
+}
+
+////////////////////////////////////////////Add new password/////////////////////////////////////////////
+
+void sign_up()
+{
+    getch();
+    system("cls");
+    char temp[10];
+    FILE *f;
+    f = fopen("password.dat","wb");
+    printf("Enter password: ");
+    get_password(password);
+    printf("\nRe Enter Password: ");
+    get_password(temp);
+    while(strcmp(password,temp)!=0){
+        printf("\nPassword did not matched! Enter again");
+        printf("\nEnter password: ");
+        get_password(password);
+        printf("\nRe Enter Password: ");
+        get_password(temp);
+        system("cls");
+    }
+    fprintf(f,"%s",password);
+    fclose(f);
+}
+
+//////////////////////////////////////////get password and mask with * ///////////////////////////
+void get_password(char* pass)
+{
+    char temp_passP[25];
+    int i=0;
+     while(1)
+    {
+            temp_passP[i]=getch();
+            if(temp_passP[i]==13){break;}
+            else if(temp_passP[i]==8)
+            {
+                if(i!=0) {
+                printf("\b \b");
+                i--;
+                } else {printf("\a");}
+            }
+            else
+            {
+                printf("*");
+                *(pass+i) = temp_passP[i];
+                i++;
+            }
+             *(pass+i)='\0';
+     }
+}
+/////////////////////////////////////////////////////////Validate password////////////////////////////////////
+void authentication()
+{
+    FILE *f;
+    char temp[10];
+    f = fopen("password.dat","rb");
+    printf("\nEnter password: ");
+    get_password(temp);
+    while(fscanf(f,"%s",password)!=EOF)
+    {
+        while(strcmp(temp,password)!=0)
+            {
+                system("cls");
+                printf("\nPassword did not match! ");
+                printf("\nEnter Again: ");
+                get_password(temp);
+            }
+        printf("\n\n\t\tLogin Success!!!");
+        sleep(2);
+        break;
+    }
+    fclose(f);
+}
+////////////////////////////////////////////////////////// LOgin ////////////////////////
+int login()
+{
+    FILE *f;
+    f = fopen("password.dat","rb");
+    if(f == NULL){
+        printf("\nYou are new to system. \nAdd new password to continue...");
+        sign_up();
+    }else{
+        authentication();
+    }
+    return 0;
+}
+
 
 
 
